@@ -1,0 +1,19 @@
+import java.util.Scanner;
+class MyNine{
+
+public static void main(String args[]){
+
+Scanner obj = new Scanner(System.in);
+int a, max = 0;
+System.out.println("Enter the 10 numbers: ");
+
+for(int i = 1; i < 11; i++){
+a = obj.nextInt();
+if(max>a){
+a;
+	
+}
+}
+System.out.println(a);
+}
+}
