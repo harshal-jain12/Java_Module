@@ -1,0 +1,1198 @@
+[10/10, 22:26] Pranav Hande Met Nashik: import java.io.*;
+import java.util.*;
+
+class Booking {
+    private String name;
+    private int row;
+    private int column;
+
+    public Booking(String name, int row, int column) {
+        this.name = name;
+        this.row = row;
+        this.column = column;
+    }
+
+    @Override
+    public String toString() {
+        return "Name: " + name + ", Seat: [" + row + ", " + column + "]";
+    }
+}
+
+class Cinema {
+    private static final int ROWS = 5;
+    private static final int COLUMNS = 5;
+    private boolean[][] seats = new boolean[ROWS][COLUMNS];
+    private List<Booking> bookings = new ArrayList<>();
+
+    public void showAvailableSeats() {
+        System.out.println("Available Seats:");
+        for (int i = 0; i < ROWS; i++) {
+            for (int j = 0; j < COLUMNS; j++) {
+                if (seats[i][j]) {
+                    System.out.print("[X] "); // Booked
+                } else {
+                    System.out.print("[O] "); // Available
+                }
+            }
+            System.out.println();
+        }
+    }
+
+    public void bookTicket(String name, int row, int column) throws Exception {
+        if (row < 0 || row >= ROWS || column < 0 || column >= COLUMNS) {
+            throw new IllegalArgumentException("Invalid seat number.");
+        }
+
+        if (seats[row][column]) {
+            throw new Exception("This seat is already booked.");
+        } else {
+            seats[row][column] = true;
+            Booking booking = new Booking(name, row, column);
+            bookings.add(booking);
+            saveBookingToFile(booking);
+            System.out.println("Ticket booked successfully for seat [" + row + ", " + column + "]!");
+        }
+    }
+
+    private void saveBookingToFile(Booking booking) {
+        try (FileWriter writer = new FileWriter("bookings.txt", true);
+             BufferedWriter bw = new BufferedWriter(writer)) {
+            bw.write(booking.toString());
+            bw.newLine();
+        } catch (IOException e) {
+            System.out.println("Error saving booking to file: " + e.getMessage());
+        }
+    }
+
+    public void loadBookings() {
+        try (BufferedReader br = new BufferedReader(new FileReader("bookings.txt"))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                System.out.println(line);
+            }
+        } catch (IOException e) {
+            System.out.println("Error reading bookings from file: " + e.getMessage());
+        }
+    }
+}
+
+public class CinemaBookingSystem {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        Cinema cinema = new Cinema();
+        int choice;
+
+        do {
+            System.out.println("\nCinema Booking System");
+            System.out.println("1. Show Available Seats");
+            System.out.println("2. Book a Ticket");
+            System.out.println("3. Load Bookings from File");
+            System.out.println("4. Exit");
+            System.out.print("Enter your choice: ");
+            choice = scanner.nextInt();
+            scanner.nextLine(); // Consume newline
+
+            switch (choice) {
+                case 1:
+                    cinema.showAvailableSeats();
+                    break;
+                case 2:
+                    try {
+                        System.out.print("Enter your name: ");
+                        String name = scanner.nextLine();
+                        System.out.print("Enter row (0 to 4): ");
+                        int row = scanner.nextInt();
+                        System.out.print("Enter column (0 to 4): ");
+                        int column = scanner.nextInt();
+                        cinema.bookTicket(name, row, column);
+                    } catch (Exception e) {
+                        System.out.println("Error: " + e.getMessage());
+                    }
+                    break;
+                case 3:
+                    cinema.loadBookings();
+                    break;
+                case 4:
+                    System.out.println("Exiting the system.");
+                    break;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
+        } while (choice != 4);
+
+        scanner.close();
+    }
+}
+[10/10, 22:26] Pranav Hande Met Nashik: import java.io.*;
+import java.util.*;
+
+class Product {
+    private String name;
+    private double price;
+    private int stock;
+
+    public Product(String name, double price, int stock) {
+        this.name = name;
+        this.price = price;
+        this.stock = stock;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public int getStock() {
+        return stock;
+    }
+
+    public void reduceStock(int quantity) {
+        this.stock -= quantity;
+    }
+
+    @Override
+    public String toString() {
+        return name + " - $" + price + " (Stock: " + stock + ")";
+    }
+}
+
+class Sale {
+    private List<Product> products;
+
+    public Sale() {
+        this.products = new ArrayList<>();
+    }
+
+    public void addProduct(Product product, int quantity) {
+        for (int i = 0; i < quantity; i++) {
+            products.add(product);
+        }
+        product.reduceStock(quantity);
+    }
+
+    public double calculateTotal() {
+        double total = 0;
+        for (Product product : products) {
+            total += product.getPrice();
+        }
+        return total;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("Sale Items:\n");
+        for (Product product : products) {
+            sb.append(product.getName()).append("\n");
+        }
+        sb.append("Total: $").append(calculateTotal());
+        return sb.toString();
+    }
+}
+
+class Shop {
+    private List<Product> inventory;
+    private List<Sale> sales;
+
+    public Shop() {
+        this.inventory = new ArrayList<>();
+        this.sales = new ArrayList<>();
+    }
+
+    public void addProduct(String name, double price, int stock) {
+        Product product = new Product(name, price, stock);
+        inventory.add(product);
+        saveProductToFile(product);
+    }
+
+    public void makeSale(String productName, int quantity) throws Exception {
+        Product product = findProduct(productName);
+        if (product == null) {
+            throw new Exception("Product not found.");
+        }
+        if (product.getStock() < quantity) {
+            throw new Exception("Not enough stock available.");
+        }
+        Sale sale = new Sale();
+        sale.addProduct(product, quantity);
+        sales.add(sale);
+        saveSaleToFile(sale);
+    }
+
+    public List<Product> getInventory() {
+        return inventory;
+    }
+
+    private Product findProduct(String name) {
+        for (Product product : inventory) {
+            if (product.getName().equalsIgnoreCase(name)) {
+                return product;
+            }
+        }
+        return null;
+    }
+
+    private void saveProductToFile(Product product) {
+        try (FileWriter writer = new FileWriter("inventory.txt", true);
+             BufferedWriter bw = new BufferedWriter(writer)) {
+            bw.write(product.toString());
+            bw.newLine();
+        } catch (IOException e) {
+            System.out.println("Error saving product to file: " + e.getMessage());
+        }
+    }
+
+    private void saveSaleToFile(Sale sale) {
+        try (FileWriter writer = new FileWriter("sales.txt", true);
+             BufferedWriter bw = new BufferedWriter(writer)) {
+            bw.write(sale.toString());
+            bw.newLine();
+        } catch (IOException e) {
+            System.out.println("Error saving sale to file: " + e.getMessage());
+        }
+    }
+
+    public void loadInventory() {
+        try (BufferedReader br = new BufferedReader(new FileReader("inventory.txt"))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split(" - \\$");
+                String name = parts[0];
+                String[] priceAndStock = parts[1].split(" \\(Stock: ");
+                double price = Double.parseDouble(priceAndStock[0]);
+                int stock = Integer.parseInt(priceAndStock[1].replaceAll("\\)", ""));
+                addProduct(name, price, stock);
+            }
+        } catch (IOException e) {
+            System.out.println("Error reading inventory from file: " + e.getMessage());
+        }
+    }
+
+    public void loadSales() {
+        try (BufferedReader br = new BufferedReader(new FileReader("sales.txt"))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                System.out.println(line);
+            }
+        } catch (IOException e) {
+            System.out.println("Error reading sales from file: " + e.getMessage());
+        }
+    }
+}
+
+public class ShopManagementSystem {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        Shop shop = new Shop();
+        shop.loadInventory(); // Load existing inventory from file
+        int choice;
+
+        do {
+            System.out.println("\nShop Management System");
+            System.out.println("1. View Inventory");
+            System.out.println("2. Add Product");
+            System.out.println("3. Make a Sale");
+            System.out.println("4. Load Sales");
+            System.out.println("5. Exit");
+            System.out.print("Enter your choice: ");
+            choice = scanner.nextInt();
+            scanner.nextLine(); // Consume newline
+
+            switch (choice) {
+                case 1:
+                    System.out.println("Inventory:");
+                    for (Product product : shop.getInventory()) {
+                        System.out.println(product);
+                    }
+                    break;
+                case 2:
+                    try {
+                        System.out.print("Enter product name: ");
+                        String name = scanner.nextLine();
+                        System.out.print("Enter product price: ");
+                        double price = scanner.nextDouble();
+                        System.out.print("Enter product stock: ");
+                        int stock = scanner.nextInt();
+                        shop.addProduct(name, price, stock);
+                        System.out.println("Product added successfully!");
+                    } catch (Exception e) {
+                        System.out.println("Error: " + e.getMessage());
+                    }
+                    break;
+                case 3:
+                    try {
+                        System.out.print("Enter product name to sell: ");
+                        String productName = scanner.nextLine();
+                        System.out.print("Enter quantity: ");
+                        int quantity = scanner.nextInt();
+                        shop.makeSale(productName, quantity);
+                        System.out.println("Sale made successfully!");
+                    } catch (Exception e) {
+                        System.out.println("Error: " + e.getMessage());
+                    }
+                    break;
+                case 4:
+                    shop.loadSales();
+                    break;
+                case 5:
+                    System.out.println("Exiting the system.");
+                    break;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
+        } while (choice != 5);
+
+        scanner.close();
+    }
+}
+[10/10, 22:26] Pranav Hande Met Nashik: import java.io.*;
+import java.util.*;
+
+class MenuItem {
+    private String name;
+    private double price;
+
+    public MenuItem(String name, double price) {
+        this.name = name;
+        this.price = price;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    @Override
+    public String toString() {
+        return name + " - $" + price;
+    }
+}
+
+class Order {
+    private List<MenuItem> items;
+
+    public Order() {
+        this.items = new ArrayList<>();
+    }
+
+    public void addItem(MenuItem item) {
+        items.add(item);
+    }
+
+    public List<MenuItem> getItems() {
+        return items;
+    }
+
+    public double calculateTotal() {
+        double total = 0;
+        for (MenuItem item : items) {
+            total += item.getPrice();
+        }
+        return total;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("Order Items:\n");
+        for (MenuItem item : items) {
+            sb.append(item.toString()).append("\n");
+        }
+        sb.append("Total: $").append(calculateTotal());
+        return sb.toString();
+    }
+}
+
+class Restaurant {
+    private List<MenuItem> menu;
+    private List<Order> orders;
+
+    public Restaurant() {
+        this.menu = new ArrayList<>();
+        this.orders = new ArrayList<>();
+    }
+
+    public void addMenuItem(String name, double price) {
+        MenuItem item = new MenuItem(name, price);
+        menu.add(item);
+        saveMenuToFile(item);
+    }
+
+    public void placeOrder(Order order) {
+        orders.add(order);
+        saveOrderToFile(order);
+    }
+
+    public List<MenuItem> getMenu() {
+        return menu;
+    }
+
+    private void saveMenuToFile(MenuItem item) {
+        try (FileWriter writer = new FileWriter("menu.txt", true);
+             BufferedWriter bw = new BufferedWriter(writer)) {
+            bw.write(item.toString());
+            bw.newLine();
+        } catch (IOException e) {
+            System.out.println("Error saving menu to file: " + e.getMessage());
+        }
+    }
+
+    private void saveOrderToFile(Order order) {
+        try (FileWriter writer = new FileWriter("orders.txt", true);
+             BufferedWriter bw = new BufferedWriter(writer)) {
+            bw.write(order.toString());
+            bw.newLine();
+        } catch (IOException e) {
+            System.out.println("Error saving order to file: " + e.getMessage());
+        }
+    }
+
+    public void loadMenu() {
+        try (BufferedReader br = new BufferedReader(new FileReader("menu.txt"))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split(" - \\$");
+                if (parts.length == 2) {
+                    String name = parts[0];
+                    double price = Double.parseDouble(parts[1]);
+                    addMenuItem(name, price);
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("Error reading menu from file: " + e.getMessage());
+        }
+    }
+
+    public void loadOrders() {
+        try (BufferedReader br = new BufferedReader(new FileReader("orders.txt"))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                System.out.println(line);
+            }
+        } catch (IOException e) {
+            System.out.println("Error reading orders from file: " + e.getMessage());
+        }
+    }
+}
+
+public class RestaurantManagementSystem {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        Restaurant restaurant = new Restaurant();
+        restaurant.loadMenu(); // Load existing menu items from file
+        int choice;
+
+        do {
+            System.out.println("\nRestaurant Management System");
+            System.out.println("1. View Menu");
+            System.out.println("2. Add Menu Item");
+            System.out.println("3. Place an Order");
+            System.out.println("4. Load Orders");
+            System.out.println("5. Exit");
+            System.out.print("Enter your choice: ");
+            choice = scanner.nextInt();
+            scanner.nextLine(); // Consume newline
+
+            switch (choice) {
+                case 1:
+                    System.out.println("Menu:");
+                    for (MenuItem item : restaurant.getMenu()) {
+                        System.out.println(item);
+                    }
+                    break;
+                case 2:
+                    try {
+                        System.out.print("Enter menu item name: ");
+                        String name = scanner.nextLine();
+                        System.out.print("Enter menu item price: ");
+                        double price = scanner.nextDouble();
+                        restaurant.addMenuItem(name, price);
+                        System.out.println("Menu item added successfully!");
+                    } catch (Exception e) {
+                        System.out.println("Error: " + e.getMessage());
+                    }
+                    break;
+                case 3:
+                    Order order = new Order();
+                    boolean ordering = true;
+                    while (ordering) {
+                        System.out.print("Enter menu item name to add to order (or type 'done' to finish): ");
+                        String itemName = scanner.nextLine();
+                        if (itemName.equalsIgnoreCase("done")) {
+                            ordering = false;
+                        } else {
+                            boolean found = false;
+                            for (MenuItem item : restaurant.getMenu()) {
+                                if (item.getName().equalsIgnoreCase(itemName)) {
+                                    order.addItem(item);
+                                    found = true;
+                                    System.out.println(itemName + " added to order.");
+                                    break;
+                                }
+                            }
+                            if (!found) {
+                                System.out.println("Item not found in menu.");
+                            }
+                        }
+                    }
+                    restaurant.placeOrder(order);
+                    System.out.println("Order placed successfully!");
+                    break;
+                case 4:
+                    restaurant.loadOrders();
+                    break;
+                case 5:
+                    System.out.println("Exiting the system.");
+                    break;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
+        } while (choice != 5);
+
+        scanner.close();
+    }
+}
+[10/10, 22:26] Pranav Hande Met Nashik: import java.io.*;
+import java.util.*;
+
+class Flight {
+    private String flightNumber;
+    private String destination;
+    private int availableSeats;
+
+    public Flight(String flightNumber, String destination, int availableSeats) {
+        this.flightNumber = flightNumber;
+        this.destination = destination;
+        this.availableSeats = availableSeats;
+    }
+
+    public String getFlightNumber() {
+        return flightNumber;
+    }
+
+    public String getDestination() {
+        return destination;
+    }
+
+    public int getAvailableSeats() {
+        return availableSeats;
+    }
+
+    public void bookSeat() {
+        if (availableSeats > 0) {
+            availableSeats--;
+        }
+    }
+
+    @Override
+    public String toString() {
+        return flightNumber + " to " + destination + " - Seats Available: " + availableSeats;
+    }
+}
+
+class Booking {
+    private Flight flight;
+    private String passengerName;
+
+    public Booking(Flight flight, String passengerName) {
+        this.flight = flight;
+        this.passengerName = passengerName;
+    }
+
+    @Override
+    public String toString() {
+        return "Passenger: " + passengerName + ", Flight: " + flight.getFlightNumber() + ", Destination: " + flight.getDestination();
+    }
+}
+
+class Airline {
+    private List<Flight> flights;
+    private List<Booking> bookings;
+
+    public Airline() {
+        this.flights = new ArrayList<>();
+        this.bookings = new ArrayList<>();
+    }
+
+    public void addFlight(String flightNumber, String destination, int availableSeats) {
+        Flight flight = new Flight(flightNumber, destination, availableSeats);
+        flights.add(flight);
+        saveFlightToFile(flight);
+    }
+
+    public void bookFlight(String flightNumber, String passengerName) throws Exception {
+        Flight flight = findFlight(flightNumber);
+        if (flight == null) {
+            throw new Exception("Flight not found.");
+        }
+        if (flight.getAvailableSeats() <= 0) {
+            throw new Exception("No available seats on this flight.");
+        }
+        Booking booking = new Booking(flight, passengerName);
+        bookings.add(booking);
+        flight.bookSeat();
+        saveBookingToFile(booking);
+    }
+
+    public List<Flight> getFlights() {
+        return flights;
+    }
+
+    private Flight findFlight(String flightNumber) {
+        for (Flight flight : flights) {
+            if (flight.getFlightNumber().equalsIgnoreCase(flightNumber)) {
+                return flight;
+            }
+        }
+        return null;
+    }
+
+    private void saveFlightToFile(Flight flight) {
+        try (FileWriter writer = new FileWriter("flights.txt", true);
+             BufferedWriter bw = new BufferedWriter(writer)) {
+            bw.write(flight.toString());
+            bw.newLine();
+        } catch (IOException e) {
+            System.out.println("Error saving flight to file: " + e.getMessage());
+        }
+    }
+
+    private void saveBookingToFile(Booking booking) {
+        try (FileWriter writer = new FileWriter("bookings.txt", true);
+             BufferedWriter bw = new BufferedWriter(writer)) {
+            bw.write(booking.toString());
+            bw.newLine();
+        } catch (IOException e) {
+            System.out.println("Error saving booking to file: " + e.getMessage());
+        }
+    }
+
+    public void loadFlights() {
+        try (BufferedReader br = new BufferedReader(new FileReader("flights.txt"))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split(" to ");
+                String flightNumber = parts[0];
+                String destination = parts[1].split(" - ")[0];
+                int availableSeats = Integer.parseInt(parts[1].split(": ")[1]);
+                addFlight(flightNumber, destination, availableSeats);
+            }
+        } catch (IOException e) {
+            System.out.println("Error reading flights from file: " + e.getMessage());
+        }
+    }
+
+    public void loadBookings() {
+        try (BufferedReader br = new BufferedReader(new FileReader("bookings.txt"))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                System.out.println(line);
+            }
+        } catch (IOException e) {
+            System.out.println("Error reading bookings from file: " + e.getMessage());
+        }
+    }
+}
+
+public class AirlineBookingSystem {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        Airline airline = new Airline();
+        airline.loadFlights(); // Load existing flights from file
+        int choice;
+
+        do {
+            System.out.println("\nAirline Booking System");
+            System.out.println("1. View Flights");
+            System.out.println("2. Add Flight");
+            System.out.println("3. Book Flight");
+            System.out.println("4. Load Bookings");
+            System.out.println("5. Exit");
+            System.out.print("Enter your choice: ");
+            choice = scanner.nextInt();
+            scanner.nextLine(); // Consume newline
+
+            switch (choice) {
+                case 1:
+                    System.out.println("Available Flights:");
+                    for (Flight flight : airline.getFlights()) {
+                        System.out.println(flight);
+                    }
+                    break;
+                case 2:
+                    try {
+                        System.out.print("Enter flight number: ");
+                        String flightNumber = scanner.nextLine();
+                        System.out.print("Enter destinatio
+[10/10, 22:26] Pranav Hande Met Nashik: import java.io.*;
+import java.util.*;
+
+class Room {
+    private String roomNumber;
+    private String type;
+    private boolean available;
+
+    public Room(String roomNumber, String type) {
+        this.roomNumber = roomNumber;
+        this.type = type;
+        this.available = true;
+    }
+
+    public String getRoomNumber() {
+        return roomNumber;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public boolean isAvailable() {
+        return available;
+    }
+
+    public void book() {
+        this.available = false;
+    }
+
+    public void free() {
+        this.available = true;
+    }
+
+    @Override
+    public String toString() {
+        return roomNumber + " (" + type + ") - " + (available ? "Available" : "Booked");
+    }
+}
+
+class Booking {
+    private Room room;
+    private String guestName;
+    private String checkInDate;
+    private String checkOutDate;
+
+    public Booking(Room room, String guestName, String checkInDate, String checkOutDate) {
+        this.room = room;
+        this.guestName = guestName;
+        this.checkInDate = checkInDate;
+        this.checkOutDate = checkOutDate;
+    }
+
+    @Override
+    public String toString() {
+        return "Guest: " + guestName + ", Room: " + room.getRoomNumber() + ", Check-in: " + checkInDate + ", Check-out: " + checkOutDate;
+    }
+}
+
+class Hotel {
+    private List<Room> rooms;
+    private List<Booking> bookings;
+
+    public Hotel() {
+        this.rooms = new ArrayList<>();
+        this.bookings = new ArrayList<>();
+    }
+
+    public void addRoom(String roomNumber, String type) {
+        Room room = new Room(roomNumber, type);
+        rooms.add(room);
+        saveRoomToFile(room);
+    }
+
+    public void bookRoom(String roomNumber, String guestName, String checkInDate, String checkOutDate) throws Exception {
+        Room room = findRoom(roomNumber);
+        if (room == null) {
+            throw new Exception("Room not found.");
+        }
+        if (!room.isAvailable()) {
+            throw new Exception("Room is already booked.");
+        }
+        Booking booking = new Booking(room, guestName, checkInDate, checkOutDate);
+        bookings.add(booking);
+        room.book();
+        saveBookingToFile(booking);
+    }
+
+    public void freeRoom(String roomNumber) throws Exception {
+        Room room = findRoom(roomNumber);
+        if (room == null) {
+            throw new Exception("Room not found.");
+        }
+        if (room.isAvailable()) {
+            throw new Exception("Room is not booked.");
+        }
+        room.free();
+    }
+
+    public List<Room> getRooms() {
+        return rooms;
+    }
+
+    private Room findRoom(String roomNumber) {
+        for (Room room : rooms) {
+            if (room.getRoomNumber().equalsIgnoreCase(roomNumber)) {
+                return room;
+            }
+        }
+        return null;
+    }
+
+    private void saveRoomToFile(Room room) {
+        try (FileWriter writer = new FileWriter("rooms.txt", true);
+             BufferedWriter bw = new BufferedWriter(writer)) {
+            bw.write(room.toString());
+            bw.newLine();
+        } catch (IOException e) {
+            System.out.println("Error saving room to file: " + e.getMessage());
+        }
+    }
+
+    private void saveBookingToFile(Booking booking) {
+        try (FileWriter writer = new FileWriter("bookings.txt", true);
+             BufferedWriter bw = new BufferedWriter(writer)) {
+            bw.write(booking.toString());
+            bw.newLine();
+        } catch (IOException e) {
+            System.out.println("Error saving booking to file: " + e.getMessage());
+        }
+    }
+
+    public void loadRooms() {
+        try (BufferedReader br = new BufferedReader(new FileReader("rooms.txt"))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split(" \\(");
+                String roomNumber = parts[0];
+                String type = parts[1].split("\\)")[0];
+                addRoom(roomNumber, type);
+            }
+        } catch (IOException e) {
+            System.out.println("Error reading rooms from file: " + e.getMessage());
+        }
+    }
+
+    public void loadBookings() {
+        try (BufferedReader br = new BufferedReader(new FileReader("bookings.txt"))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                System.out.println(line);
+            }
+        } catch (IOException e) {
+            System.out.println("Error reading bookings from file: " + e.getMessage());
+        }
+    }
+}
+
+public class HotelManagementSystem {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        Hotel hotel = new Hotel();
+        hotel.loadRooms(); // Load existing rooms from file
+        int choice;
+
+        do {
+            System.out.println("\nHotel Management System");
+            System.out.println("1. View Rooms");
+            System.out.println("2. Add Room");
+            System.out.println("3. Book Room");
+            System.out.println("4. Free Room");
+            System.out.println("5. Load Bookings");
+            System.out.println("6. Exit");
+            System.out.print("Enter your choice: ");
+            choice = scanner.nextInt();
+            scanner.nextLine(); // Consume newline
+
+            switch (choice) {
+                case 1:
+                    System.out.println("Available Rooms:");
+                    for (Room room : hotel.getRooms()) {
+                        System.out.println(room);
+                    }
+                    break;
+                case 2:
+                    try {
+                        System.out.print("Enter room number: ");
+                        String roomNumber = scanner.nextLine();
+                        System.out.print("Enter room type: ");
+                        String type = scanner.nextLine();
+                        hotel.addRoom(roomNumber, type);
+                        System.out.println("Room added successfully!");
+                    } catch (Exception e) {
+                        System.out.println("Error: " + e.getMessage());
+                    }
+                    break;
+                case 3:
+                    try {
+                        System.out.print("Enter room number to book: ");
+                        String roomNumber = scanner.nextLine();
+                        System.out.print("Enter guest name: ");
+                        String guestName = scanner.nextLine();
+                        System.out.print("Enter check-in date (YYYY-MM-DD): ");
+                        String checkInDate = scanner.nextLine();
+                        System.out.print("Enter check-out date (YYYY-MM-DD): ");
+                        String checkOutDate = scanner.nextLine();
+                        hotel.bookRoom(roomNumber, guestName, checkInDate, checkOutDate);
+                        System.out.println("Room booked successfully!");
+                    } catch (Exception e) {
+                        System.out.println("Error: " + e.getMessage());
+                    }
+                    break;
+                case 4:
+                    try {
+                        System.out.print("Enter room number to free: ");
+                        String roomNumber = scanner.nextLine();
+                        hotel.freeRoom(roomNumber);
+                        System.out.println("Room freed successfully!");
+                    } catch (Exception e) {
+                        System.out.println("Error: " + e.getMessage());
+                    }
+                    break;
+                case 5:
+                    hotel.loadBookings();
+                    break;
+                case 6:
+                    System.out.println("Exiting the system.");
+                    break;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
+        } while (choice != 6);
+
+        scanner.close();
+    }
+}
+[10/10, 22:26] Pranav Hande Met Nashik: import java.io.*;
+import java.util.*;
+
+class Vehicle {
+    private String name;
+    private String type;
+    private boolean available;
+
+    public Vehicle(String name, String type) {
+        this.name = name;
+        this.type = type;
+        this.available = true;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public boolean isAvailable() {
+        return available;
+    }
+
+    public void rent() {
+        this.available = false;
+    }
+
+    public void returnVehicle() {
+        this.available = true;
+    }
+
+    @Override
+    public String toString() {
+        return name + " (" + type + ") - " + (available ? "Available" : "Rented");
+    }
+}
+
+class Rental {
+    private Vehicle vehicle;
+    private String renterName;
+    private String rentalPeriod;
+
+    public Rental(Vehicle vehicle, String renterName, String rentalPeriod) {
+        this.vehicle = vehicle;
+        this.renterName = renterName;
+        this.rentalPeriod = rentalPeriod;
+    }
+
+    @Override
+    public String toString() {
+        return "Renter: " + renterName + ", Vehicle: " + vehicle.getName() + ", Rental Period: " + rentalPeriod;
+    }
+}
+
+class VehicleRental {
+    private List<Vehicle> inventory;
+    private List<Rental> rentals;
+
+    public VehicleRental() {
+        this.inventory = new ArrayList<>();
+        this.rentals = new ArrayList<>();
+    }
+
+    public void addVehicle(String name, String type) {
+        Vehicle vehicle = new Vehicle(name, type);
+        inventory.add(vehicle);
+        saveVehicleToFile(vehicle);
+    }
+
+    public void rentVehicle(String vehicleName, String renterName, String rentalPeriod) throws Exception {
+        Vehicle vehicle = findVehicle(vehicleName);
+        if (vehicle == null) {
+            throw new Exception("Vehicle not found.");
+        }
+        if (!vehicle.isAvailable()) {
+            throw new Exception("Vehicle is currently rented.");
+        }
+        Rental rental = new Rental(vehicle, renterName, rentalPeriod);
+        rentals.add(rental);
+        vehicle.rent();
+        saveRentalToFile(rental);
+    }
+
+    public void returnVehicle(String vehicleName) throws Exception {
+        Vehicle vehicle = findVehicle(vehicleName);
+        if (vehicle == null) {
+            throw new Exception("Vehicle not found.");
+        }
+        if (vehicle.isAvailable()) {
+            throw new Exception("Vehicle is not rented.");
+        }
+        vehicle.returnVehicle();
+    }
+
+    public List<Vehicle> getInventory() {
+        return inventory;
+    }
+
+    private Vehicle findVehicle(String name) {
+        for (Vehicle vehicle : inventory) {
+            if (vehicle.getName().equalsIgnoreCase(name)) {
+                return vehicle;
+            }
+        }
+        return null;
+    }
+
+    private void saveVehicleToFile(Vehicle vehicle) {
+        try (FileWriter writer = new FileWriter("vehicles.txt", true);
+             BufferedWriter bw = new BufferedWriter(writer)) {
+            bw.write(vehicle.toString());
+            bw.newLine();
+        } catch (IOException e) {
+            System.out.println("Error saving vehicle to file: " + e.getMessage());
+        }
+    }
+
+    private void saveRentalToFile(Rental rental) {
+        try (FileWriter writer = new FileWriter("rentals.txt", true);
+             BufferedWriter bw = new BufferedWriter(writer)) {
+            bw.write(rental.toString());
+            bw.newLine();
+        } catch (IOException e) {
+            System.out.println("Error saving rental to file: " + e.getMessage());
+        }
+    }
+
+    public void loadInventory() {
+        try (BufferedReader br = new BufferedReader(new FileReader("vehicles.txt"))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split(" \\(");
+                String name = parts[0];
+                String type = parts[1].split("\\)")[0];
+                addVehicle(name, type);
+            }
+        } catch (IOException e) {
+            System.out.println("Error reading inventory from file: " + e.getMessage());
+        }
+    }
+
+    public void loadRentals() {
+        try (BufferedReader br = new BufferedReader(new FileReader("rentals.txt"))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                System.out.println(line);
+            }
+        } catch (IOException e) {
+            System.out.println("Error reading rentals from file: " + e.getMessage());
+        }
+    }
+}
+
+public class VehicleRentalSystem {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        VehicleRental rentalService = new VehicleRental();
+        rentalService.loadInventory(); // Load existing vehicles from file
+        int choice;
+
+        do {
+            System.out.println("\nVehicle Rental System");
+            System.out.println("1. View Inventory");
+            System.out.println("2. Add Vehicle");
+            System.out.println("3. Rent Vehicle");
+            System.out.println("4. Return Vehicle");
+            System.out.println("5. Load Rentals");
+            System.out.println("6. Exit");
+            System.out.print("Enter your choice: ");
+            choice = scanner.nextInt();
+            scanner.nextLine(); // Consume newline
+
+            switch (choice) {
+                case 1:
+                    System.out.println("Inventory:");
+                    for (Vehicle vehicle : rentalService.getInventory()) {
+                        System.out.println(vehicle);
+                    }
+                    break;
+                case 2:
+                    try {
+                        System.out.print("Enter vehicle name: ");
+                        String name = scanner.nextLine();
+                        System.out.print("Enter vehicle type: ");
+                        String type = scanner.nextLine();
+                        rentalService.addVehicle(name, type);
+                        System.out.println("Vehicle added successfully!");
+                    } catch (Exception e) {
+                        System.out.println("Error: " + e.getMessage());
+                    }
+                    break;
+                case 3:
+                    try {
+                        System.out.print("Enter vehicle name to rent: ");
+                        String vehicleName = scanner.nextLine();
+                        System.out.print("Enter renter name: ");
+                        String renterName = scanner.nextLine();
+                        System.out.print("Enter rental period: ");
+                        String rentalPeriod = scanner.nextLine();
+                        rentalService.rentVehicle(vehicleName, renterName, rentalPeriod);
+                        System.out.println("Vehicle rented successfully!");
+                    } catch (Exception e) {
+                        System.out.println("Error: " + e.getMessage());
+                    }
+                    break;
+                case 4:
+                    try {
+                        System.out.print("Enter vehicle name to return: ");
+                        String vehicleName = scanner.nextLine();
+                        rentalService.returnVehicle(vehicleName);
+                        System.out.println("Vehicle returned successfully!");
+                    } catch (Exception e) {
+                        System.out.println("Error: " + e.getMessage());
+                    }
+                    break;
+                case 5:
+                    rentalService.loadRentals();
+                    break;
+                case 6:
+                    System.out.println("Exiting the system.");
+                    break;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
+        } while (choice != 6);
+
+        scanner.close();
+    }
+}
